@@ -36,12 +36,13 @@ func myWalkFunc(path string, info os.FileInfo, err error) error {
 }
 
 func extract(file string) {
+	fmt.Println(file)
 	cmd := exec.Command("mkvinfo", file)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("get info for %s failed", file)
+		fmt.Printf("get info for %s failed\n", file)
 		return
 	}
 
@@ -71,18 +72,27 @@ func extract(file string) {
 		}
 
 		nameIndex := strings.Index(i, "+ Name: ")
-		name := i[nameIndex+8 : strings.IndexAny(i[nameIndex:], "\n\r")+nameIndex]
+		name := "no_name"
+		if nameIndex != -1 {
+			name = i[nameIndex+8 : strings.IndexAny(i[nameIndex:], "\n\r")+nameIndex]
+		}
+
+		langIndex := strings.Index(i, "+ Language: ")
+		lang := "no_lang"
+		if langIndex != -1 {
+			lang = i[langIndex+12 : strings.IndexAny(i[langIndex:], "\n\r")+langIndex]
+		}
 
 		dir := filepath.Dir(file)
 		fileName := filepath.Base(file)
 		targetDir := filepath.Join(dir, fileName+".sub")
 		os.Mkdir(targetDir, 0777)
 
-		subName := fileName[:strings.LastIndex(fileName, ".")+1] + name + "." + ext
+		subName := fileName[:strings.LastIndex(fileName, ".")+1] + strconv.Itoa(no) + "." + name + "." + lang + "." + ext
 		cmd := exec.Command("mkvextract", file, "tracks", strconv.Itoa(no)+":"+filepath.Join(targetDir, subName))
 		err := cmd.Run()
 		if err != nil {
-			fmt.Printf("extract subtitles %s for %s failed", name, file)
+			fmt.Printf("extract subtitles %s for %s failed\n", name, file)
 			continue
 		}
 	}
